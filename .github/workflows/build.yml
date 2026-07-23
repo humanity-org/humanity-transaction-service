@@ -1,0 +1,30 @@
+# Build the humanity-transaction-service image and roll the ECS services.
+# Reusable workflow lives in humanity-org/devops; see docs/app-cicd.md there.
+name: build
+
+on:
+  push:
+    branches: [staging, production]
+
+jobs:
+  image:
+    uses: humanity-org/devops/.github/workflows/reusable-image-build.yml@main
+    with:
+      image-name: humanity-transaction-service
+      dockerfile: docker/web/Dockerfile
+      # Task defs reference the floating branch tag; after the push the
+      # workflow force-redeploys these services (skipped if the cluster
+      # doesn't exist yet - first bring-up follows terraform/safe/RUNBOOK.md).
+      ecs-cluster: safe-${{ github.ref_name }}
+      ecs-services: >-
+        safe-${{ github.ref_name }}-txs-web
+        safe-${{ github.ref_name }}-txs-worker-indexer
+        safe-${{ github.ref_name }}-txs-worker-contracts-tokens
+        safe-${{ github.ref_name }}-txs-worker-notifications-webhooks
+        safe-${{ github.ref_name }}-txs-scheduler
+        safe-${{ github.ref_name }}-txs-testnet-web
+        safe-${{ github.ref_name }}-txs-testnet-worker
+        safe-${{ github.ref_name }}-txs-testnet-scheduler
+    permissions:
+      id-token: write
+      contents: read
